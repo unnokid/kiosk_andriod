@@ -1,0 +1,10 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.SMKiosk" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/sb_primary</item>
+        <item name="colorPrimaryVariant">@color/sb_primary_dark</item>
+        <item name="colorSecondary">@color/sb_primary</item>
+        <!-- 필요하면 colorAccent 도 sb_primary 로 -->
+    </style>
+
+</resources>

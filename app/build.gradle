@@ -1,0 +1,64 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+import java.util.Properties
+
+// local.properties 로드 (프로젝트 루트에 있어야 함)
+def localProps = new Properties()
+def localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream { localProps.load(it) }
+}
+
+// 키 값 미리 꺼내기(스코프 이슈 방지)
+def API_BASE_URL = localProps.getProperty("API_BASE_URL", "")
+def API_KEY      = localProps.getProperty("API_KEY", "")
+def PRINTER_MAC  = localProps.getProperty("PRINTER_MAC", "")
+
+android {
+    namespace 'com.example.smkiosk'
+    compileSdk 36
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    defaultConfig {
+        applicationId "com.example.smkiosk"
+        minSdk 24
+        targetSdk 36
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // BuildConfig 주입
+        buildConfigField "String", "API_BASE_URL", "\"${API_BASE_URL}\""
+        buildConfigField "String", "API_KEY",      "\"${API_KEY}\""
+        buildConfigField "String", "PRINTER_MAC",  "\"${PRINTER_MAC}\""
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.activity
+    implementation libs.constraintlayout
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+}

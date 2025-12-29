@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp">
+
+    <!-- HOT / ICE / 딸기 등 -->
+    <TextView
+        android:id="@+id/tvOptionLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="HOT"
+        android:textSize="13sp"
+        android:textColor="@color/sb_text_muted" />
+
+    <!-- 가격 -->
+    <TextView
+        android:id="@+id/tvOptionPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="3,000원"
+        android:textSize="13sp"
+        android:textColor="@color/sb_text_muted" />
+</LinearLayout>

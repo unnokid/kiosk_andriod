@@ -1,0 +1,14 @@
+<resources>
+    <!-- 기존 색 + 아래 색상 추가 -->
+    <color name="sb_primary">#0C3B2E</color>        <!-- 진한 스타벅스 그린 -->
+    <color name="sb_primary_dark">#08251C</color>   <!-- 더 어두운 그린 -->
+    <color name="sb_accent">#C89D5B</color>         <!-- 골드 포인트 -->
+    <color name="sb_bg">#F5F2EA</color>             <!-- 크림/베이지 배경 -->
+    <color name="sb_card_bg">#FFFFFF</color>        <!-- 카드용 화이트 -->
+    <color name="sb_divider">#D6D0C4</color>        <!-- 연한 베이지 라인 -->
+    <color name="sb_text_primary">#212121</color>
+    <color name="sb_text_muted">#666666</color>
+    <color name="sb_button_purple">#7C4DFF</color>  <!-- 버튼용 포인트(지금 보라 유지) -->
+    <color name="sb_green">#00754A</color>
+    <color name="sb_green_dark">#004C34</color>
+</resources>

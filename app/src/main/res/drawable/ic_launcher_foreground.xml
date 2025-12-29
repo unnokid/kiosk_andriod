@@ -1,0 +1,46 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Steam -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M42,26 C36,34 48,36 42,44" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M54,24 C48,32 60,34 54,42" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M66,26 C60,34 72,36 66,44" />
+
+    <!-- Cup body -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,50 h34 v18 a10,10 0 0 1 -10,10 h-14 a10,10 0 0 1 -10,-10 z" />
+
+    <!-- Handle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M68,54
+                          c10,0 14,6 14,12
+                          c0,6 -4,12 -14,12
+                          v-6
+                          c6,0 8,-3 8,-6
+                          c0,-3 -2,-6 -8,-6 z" />
+
+    <!-- Saucer -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M28,80 h52 a6,6 0 0 1 0,12 h-52 a6,6 0 0 1 0,-12 z" />
+</vector>
