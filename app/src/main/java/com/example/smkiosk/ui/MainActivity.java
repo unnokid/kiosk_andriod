@@ -50,11 +50,11 @@ public class MainActivity extends AppCompatActivity {
 
     private RecyclerView rvMenu, rvCart, rvCategory;
     private TextView tvTotal;
-    private Button btnDrink, btnSnack, btnOrder, btnTotalPage, btnDonation;
+    private Button btnOrder, btnTotalPage, btnDonation;
 
     private String kioskId;
 
-    //TODO: 프린터 맥주소 추후 수정
+    //TODO: 사용할 프린터 맥주소
     private static final String PRINTER_MAC = BuildConfig.PRINTER_MAC;
     private final List<MenuItem> allMenus = new ArrayList<>();
     private final List<MenuOption> allOptions = new ArrayList<>();
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        // ★ 앱 전체 라이트 모드 고정
+        //앱 전체 라이트 모드 고정
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -82,8 +82,6 @@ public class MainActivity extends AppCompatActivity {
         rvCategory = findViewById(R.id.rvCategory);
 
         tvTotal = findViewById(R.id.tvTotal);
-        //btnDrink = findViewById(R.id.btnDrink);
-        //btnSnack = findViewById(R.id.btnSnack);
         btnOrder = findViewById(R.id.btnOrder);
         btnTotalPage = findViewById(R.id.btnTotalPage);
         btnDonation = findViewById(R.id.btnDonation);
@@ -195,10 +193,9 @@ public class MainActivity extends AppCompatActivity {
                 if (categories.isEmpty()) return;
 
 
-                // 카테고리 어댑터 세팅
                 String defaultCategory = categories.get(0);
 
-                // ★ 카테고리 어댑터 세팅
+                // 카테고리 어댑터 세팅
                 if (categoryAdapter == null) {
                     categoryAdapter = new CategoryAdapter(categories, category -> {
                         if (menuAdapter != null) {
@@ -242,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // ★ 옵션 개수 기준 오름차순 정렬
+        // 옵션 개수 기준 오름차순 정렬
         Collections.sort(list, (m1, m2) -> {
             int c1 = getOptionCountForMenu(m1.id);
             int c2 = getOptionCountForMenu(m2.id);
@@ -281,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
 
             ArrayAdapter<String> adapter = new ArrayAdapter<>(
                     this,
-                    R.layout.item_option_dialog,   // ★ 커스텀 리스트 아이템
+                    R.layout.item_option_dialog,   // 커스텀 리스트 아이템
                     R.id.tvOption,
                     labels
             );
@@ -311,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
         return list;
     }
 
-    // 장바구니에 추가 (같은 메뉴+옵션이면 수량만 +1)
+    // 장바구니에 추가 (같은 메뉴 + 옵션이면 수량만 +1)
     private void addToCart(MenuItem item, MenuOption option) {
         for (SelectedItem s : cart) {
             boolean sameMenu = s.menu.id.equals(item.id);
@@ -338,12 +335,12 @@ public class MainActivity extends AppCompatActivity {
     private void refreshTotal() {
         int sum = 0;
         for (SelectedItem s : cart) {
-            sum += s.getLinePrice();   // getLinePrice() = (base + option) * qty
+            sum += s.getLinePrice();
         }
         tvTotal.setText("총합: " + String.format("%,d", sum) + "원");
     }
 
-    // 주문하기 (나중에 서버로 전송 로직 추가 예정)
+    // 주문하기
     private void sendOrder() {
         if (cart.isEmpty()) return;
 
@@ -363,7 +360,7 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("받은금액 입력")
                 .setView(dialogView)
                 .setNegativeButton("취소", null)
-                .setPositiveButton("확인", null)   // 나중에 override
+                .setPositiveButton("확인", null)
                 .create();
 
         alertDialog.setOnShowListener(d -> {
