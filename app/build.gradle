@@ -17,7 +17,7 @@ def API_KEY      = localProps.getProperty("API_KEY", "")
 def PRINTER_MAC  = localProps.getProperty("PRINTER_MAC", "")
 
 android {
-    namespace 'com.example.smkiosk'
+    namespace "com.example.smkiosk"
     compileSdk 36
 
     buildFeatures {

@@ -1,9 +1,16 @@
 package com.example.smkiosk.ui;
 
+import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -13,6 +20,7 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -38,9 +46,12 @@ import com.example.smkiosk.model.OrderSaveResponse;
 import com.example.smkiosk.model.SelectedItem;
 import com.google.gson.Gson;
 
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -56,6 +67,14 @@ public class MainActivity extends AppCompatActivity {
 
     //TODO: 사용할 프린터 맥주소
     private static final String PRINTER_MAC = BuildConfig.PRINTER_MAC;
+
+    private static final int REQ_BT = 1001;
+    private static final UUID SPP_UUID =
+            UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
+    private static final String ENC = "MS949";
+
+    private BluetoothDevice selectedPrinter = null;
+
     private final List<MenuItem> allMenus = new ArrayList<>();
     private final List<MenuOption> allOptions = new ArrayList<>();
     private final List<SelectedItem> cart = new ArrayList<>();
@@ -462,7 +481,8 @@ public class MainActivity extends AppCompatActivity {
                     OrderSaveResponse res = response.body();
                     String receipt = buildReceiptString(res, printTarget);
                     Log.d("SMKIOSK", receipt);
-                    //printReceipt(receipt); //TODO: 프린터 연동처리및 출력
+
+                    printReceipt(receipt, response.body().getOrderNo()); //처리 안해도 문제는 없음
 
                     cart.clear();
                     cartAdapter.notifyDataSetChanged();
@@ -497,11 +517,11 @@ public class MainActivity extends AppCompatActivity {
     // 영수증 문자열 생성
     private String buildReceiptString(OrderSaveResponse response, List<SelectedItem> items) {
         StringBuilder sb = new StringBuilder();
-        String line = "-------------------------------------\n";
+        String line = "------------------------\n";
 
         sb.append(line);
-        sb.append("● 주문번호 : ").append(response.getOrderNo()).append("번\n");
-        sb.append("● 주문시간 : ").append(response.getCreatedt()).append("\n");
+        sb.append("●주문번호: ").append(response.getOrderNo()).append("번\n");
+        sb.append("●시간: ").append(response.getCreatedt()).append("\n");
         sb.append(line);
 
         for (SelectedItem s : items) {
@@ -525,35 +545,96 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // 블루투스 프린터로 출력
-    private void printReceipt(String text) {
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
+    private void printReceipt(String text, Long orderNo) {
+        if (!ensureBtPermissionOrRequest()) return;
+
+        if (selectedPrinter == null) {
+            showBondedPrinterPicker(() -> printReceipt(text, orderNo)); // 선택 후 재시도
+            return;
+        }
+
+        BluetoothAdapter ad = BluetoothAdapter.getDefaultAdapter();
+        if (ad == null || !ad.isEnabled()) {
+            Toast.makeText(this, "블루투스를 켜주세요", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        final BluetoothDevice device = selectedPrinter;
+
         new Thread(() -> {
+            BluetoothSocket socket = null;
+            OutputStream os = null;
+
             try {
-                android.bluetooth.BluetoothAdapter adapter =
-                        android.bluetooth.BluetoothAdapter.getDefaultAdapter();
-                android.bluetooth.BluetoothDevice device =
-                        adapter.getRemoteDevice(PRINTER_MAC);
+                // 연결 안정화
+                try {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                        ad.cancelDiscovery();
+                    } else {
+                        if (checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED) {
+                            ad.cancelDiscovery();
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                SystemClock.sleep(200);
 
-                java.util.UUID uuid = java.util.UUID.fromString(
-                        "00001101-0000-1000-8000-00805f9b34fb"
-                );
-                android.bluetooth.BluetoothSocket socket =
-                        device.createRfcommSocketToServiceRecord(uuid);
+                // insecure 먼저가 더 잘 되는 프린터가 많음
+                try {
+                    socket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID);
+                    socket.connect();
+                } catch (Exception ignored) {
+                    socket = device.createRfcommSocketToServiceRecord(SPP_UUID);
+                    socket.connect();
+                }
 
-                socket.connect();
+                SystemClock.sleep(200);
 
-                java.io.OutputStream os = socket.getOutputStream();
-                byte[] bytes = text.getBytes("MS949"); // 프린터 인코딩에 맞게
-                os.write(bytes);
-                os.write(new byte[]{0x0A, 0x0A, 0x0A}); // 줄바꿈 몇 줄
+                os = socket.getOutputStream();
+                os.write(new byte[]{0x1B, 0x40}); // init
+
+                os.write(new byte[]{0x1B, 0x61, 0x01}); // center
+                os.write(new byte[]{0x1B, 0x45, 0x01}); // bold on
+                os.write(new byte[]{0x1D, 0x42, 0x01}); // invert on (선택)
+                os.write(new byte[]{0x1D, 0x21, 0x22}); // 3x3
+
+                os.write(("  " + orderNo + "  \n").getBytes(ENC)); // 숫자만 + 좌우 공백
+
+                // 원복(역상/크기/굵기만 원복, 정렬은 아래에서 처리)
+                os.write(new byte[]{0x1D, 0x42, 0x00}); // invert off
+                os.write(new byte[]{0x1B, 0x45, 0x00}); // bold off
+                os.write(new byte[]{0x1D, 0x21, 0x11}); // 2x2
+                os.write(new byte[]{0x1B, 0x61, 0x00}); // left
+                os.write(text.getBytes(ENC));
+
+                // 여백 5줄 + 커트
+                os.write(new byte[]{0x0A, 0x0A, 0x0A, 0x0A, 0x0A});
+                os.write(new byte[]{0x1D, 0x56, 0x01}); // cut
                 os.flush();
 
-                os.close();
-                socket.close();
+                runOnUiThread(() -> Toast.makeText(this, "출력 성공", Toast.LENGTH_LONG).show());
+
             } catch (Exception e) {
-                e.printStackTrace();
+                final String msg = "출력 실패: " + e.getClass().getSimpleName() + " / " + e.getMessage();
+                runOnUiThread(() -> new AlertDialog.Builder(this)
+                        .setTitle("BT 오류")
+                        .setMessage(msg)
+                        .setPositiveButton("OK", null)
+                        .show());
+            } finally {
+                try {
+                    if (os != null) os.close();
+                } catch (Exception ignored) {
+                }
+                try {
+                    if (socket != null) socket.close();
+                } catch (Exception ignored) {
+                }
             }
         }).start();
     }
+
 
     private void showDonationDialog() {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_donation, null);
@@ -644,4 +725,63 @@ public class MainActivity extends AppCompatActivity {
 
         dialog.show();
     }
+
+    private boolean ensureBtPermissionOrRequest() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true;
+
+        List<String> req = new ArrayList<>();
+        if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED)
+            req.add(Manifest.permission.BLUETOOTH_CONNECT);
+        if (checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED)
+            req.add(Manifest.permission.BLUETOOTH_SCAN);
+
+        if (!req.isEmpty()) {
+            requestPermissions(req.toArray(new String[0]), REQ_BT);
+            Toast.makeText(this, "블루투스 권한 허용 후 다시 시도", Toast.LENGTH_LONG).show();
+            return false;
+        }
+        return true;
+    }
+
+    private void showBondedPrinterPicker(Runnable afterPick) {
+        if (!ensureBtPermissionOrRequest()) return;
+
+        BluetoothAdapter ad = BluetoothAdapter.getDefaultAdapter();
+        if (ad == null || !ad.isEnabled()) {
+            Toast.makeText(this, "블루투스를 켜주세요", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "CONNECT 권한 없음", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Set<BluetoothDevice> bonded = ad.getBondedDevices();
+        if (bonded == null || bonded.isEmpty()) {
+            Toast.makeText(this, "페어링된 기기 없음", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        List<BluetoothDevice> list = new ArrayList<>(bonded);
+        String[] labels = new String[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            BluetoothDevice d = list.get(i);
+            String name = (d.getName() == null ? "(no-name)" : d.getName());
+            labels[i] = name + " / " + d.getAddress();
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("프린터 선택(페어링 목록)")
+                .setItems(labels, (dlg, which) -> {
+                    selectedPrinter = list.get(which);
+                    Toast.makeText(this, "선택됨: " + labels[which], Toast.LENGTH_LONG).show();
+                    if (afterPick != null) afterPick.run();
+                })
+                .setNegativeButton("취소", null)
+                .show();
+    }
+
+
 }

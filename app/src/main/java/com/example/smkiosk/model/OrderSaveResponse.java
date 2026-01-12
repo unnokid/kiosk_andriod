@@ -11,7 +11,9 @@ public class OrderSaveResponse {
     }
 
     public String getCreatedt() {
-        return createdt;
+        String s = createdt;
+        s = s.replace('T', ' ');
+        return (s.length() >= 16) ? s.substring(0, 16) : s;
     }
 
     public Long getOrderNo() {
