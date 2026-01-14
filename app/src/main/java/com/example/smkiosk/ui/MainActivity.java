@@ -507,7 +507,7 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("SMKIOSK", receipt);
 
                     //TODO : 실제 배포시에는 써야함
-                    //printReceipt(receipt, response.body().getOrderNo()); 
+                    printReceipt(receipt, response.body().getOrderNo());
 
                     cart.clear();
                     cartAdapter.notifyDataSetChanged();
