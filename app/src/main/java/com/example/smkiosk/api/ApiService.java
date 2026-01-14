@@ -1,6 +1,11 @@
 package com.example.smkiosk.api;
 
+import com.example.smkiosk.model.Category;
+import com.example.smkiosk.model.CategoryCreateRequest;
+import com.example.smkiosk.model.CategoryDeleteRequest;
 import com.example.smkiosk.model.DonationRequest;
+import com.example.smkiosk.model.MenuCreateRequest;
+import com.example.smkiosk.model.MenuDeleteRequest;
 import com.example.smkiosk.model.MenuResponse;
 import com.example.smkiosk.model.OrderRequest;
 import com.example.smkiosk.model.OrderSaveResponse;
@@ -32,4 +37,18 @@ public interface ApiService {
     @POST("donation/plus")
     Call<Void> addDonation(@Body DonationRequest request);
 
+    @GET("category/all")
+    Call<List<Category>> getCategoryList(@Query("email") String email);
+
+    @POST("category/plus")
+    Call<Void> addCategory(@Body CategoryCreateRequest request);
+
+    @POST("category/minus")
+    Call<Void> deleteCategory(@Body CategoryDeleteRequest request);
+
+    @POST("menu/plus")
+    Call<Void> addMenu(@Body MenuCreateRequest req);
+
+    @POST("menu/minus")
+    Call<Void> deleteMenu(@Body MenuDeleteRequest req);
 }

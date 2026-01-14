@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.smkiosk.R;
@@ -23,11 +25,18 @@ import retrofit2.Response;
 public class SummaryActivity extends AppCompatActivity {
 
     private TextView tvSummary, tvMenuCount;
-    private Button btnBack, btnOrderDetail, btnDonationDetail;
+    private Button btnBack, btnAdmin, btnOrderDetail, btnDonationDetail;
     private ApiService apiService;
-    private SettlementResponse lastSummary;   // 상세 화면에서 다시 써도 되고, 이메일만 넘겨서 다시 호출해도 됨
+    private SettlementResponse lastSummary;
 
     private String kioskId;
+
+    private final ActivityResultLauncher<Intent> adminLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    setResult(RESULT_OK); // Main에게 변경됨 전달
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,10 +46,17 @@ public class SummaryActivity extends AppCompatActivity {
         tvSummary = findViewById(R.id.tvSummary);
         tvMenuCount = findViewById(R.id.tvMenuCount);
         btnBack = findViewById(R.id.btnBack);
+        btnAdmin = findViewById(R.id.btnAdmin);
         btnOrderDetail = findViewById(R.id.btnOrderDetail);
         btnDonationDetail = findViewById(R.id.btnDonationDetail);
 
         btnBack.setOnClickListener(v -> finish());
+        btnAdmin.setOnClickListener(v -> {
+            Intent intent = new Intent(SummaryActivity.this, AdminActivity.class);
+            intent.putExtra("KIOSK_ID", kioskId);
+            adminLauncher.launch(intent);
+        });
+
         CopyUtils.setupCopyButton(this, R.id.btnCopy, "summary", R.id.tvSummary, R.id.tvMenuCount);
         kioskId = getIntent().getStringExtra("KIOSK_ID");
 
@@ -51,13 +67,13 @@ public class SummaryActivity extends AppCompatActivity {
 
         btnOrderDetail.setOnClickListener(v -> {
             Intent intent = new Intent(SummaryActivity.this, OrderDetailActivity.class);
-            intent.putExtra("KIOSK_ID", kioskId);   // 처음 받은 값
+            intent.putExtra("KIOSK_ID", kioskId);
             startActivity(intent);
         });
 
         btnDonationDetail.setOnClickListener(v -> {
             Intent intent = new Intent(SummaryActivity.this, DonationDetailActivity.class);
-            intent.putExtra("KIOSK_ID", kioskId);   // 처음 받은 값
+            intent.putExtra("KIOSK_ID", kioskId);
             startActivity(intent);
         });
     }

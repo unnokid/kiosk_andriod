@@ -1,0 +1,40 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/etMenuName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="메뉴명"/>
+
+    <EditText
+        android:id="@+id/etMenuPrice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="금액"
+        android:inputType="number"
+        android:layout_marginTop="12dp"/>
+
+    <Spinner
+        android:id="@+id/spCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"/>
+
+    <Button
+        android:id="@+id/btnAddOptionRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="옵션 추가"
+        android:layout_marginTop="12dp"/>
+
+    <LinearLayout
+        android:id="@+id/optionContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="8dp"/>
+</LinearLayout>

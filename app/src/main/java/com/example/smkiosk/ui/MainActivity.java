@@ -20,6 +20,8 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -65,9 +67,6 @@ public class MainActivity extends AppCompatActivity {
 
     private String kioskId;
 
-    //TODO: 사용할 프린터 맥주소
-    private static final String PRINTER_MAC = BuildConfig.PRINTER_MAC;
-
     private static final int REQ_BT = 1001;
     private static final UUID SPP_UUID =
             UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
@@ -86,6 +85,15 @@ public class MainActivity extends AppCompatActivity {
 
     // Retrofit
     private ApiService apiService;
+
+    private String selectedCategory = null;
+
+    private final ActivityResultLauncher<Intent> summaryLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK) {
+                    loadMenusFromServer(); // 메뉴판 재조회
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,14 +114,14 @@ public class MainActivity extends AppCompatActivity {
         btnDonation = findViewById(R.id.btnDonation);
 
         btnTotalPage.setOnClickListener(v -> {
-            Toast.makeText(this, "★★ 정산 버튼 클릭 ★★", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, "★★ 정산 버튼 클릭 ★★", Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(MainActivity.this, SummaryActivity.class);
             intent.putExtra("KIOSK_ID", kioskId);   // 처음 받은 값
-            startActivity(intent);
+            summaryLauncher.launch(intent);
         });
 
         btnDonation.setOnClickListener(v -> {
-            Toast.makeText(this, "★★ 찬조 버튼 클릭 ★★", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, "★★ 찬조 버튼 클릭 ★★", Toast.LENGTH_SHORT).show();
             showDonationDialog();
         });
 
@@ -165,10 +173,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadMenusFromServer() {
+        //Toast.makeText(this, "★★ 메뉴 갱신 여부 확인 ★★", Toast.LENGTH_SHORT).show();
+
         apiService.getMenuList(kioskId).enqueue(new Callback<>() {
             @Override
-            public void onResponse(Call<List<MenuResponse>> call,
-                                   Response<List<MenuResponse>> response) {
+            public void onResponse(Call<List<MenuResponse>> call, Response<List<MenuResponse>> response) {
 
                 if (!response.isSuccessful() || response.body() == null) {
                     return;
@@ -209,14 +218,26 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                if (categories.isEmpty()) return;
+                if (categories.isEmpty()) {
+                    // 화면 비우고 싶으면 여기서 어댑터 처리
+                    if (menuAdapter != null) menuAdapter.setItems(new ArrayList<>());
+                    return;
+                }
 
-
-                String defaultCategory = categories.get(0);
+                // 선택 카테고리 유지 (없거나 사라졌으면 0번)
+                String categoryToShow;
+                if (selectedCategory != null && categories.contains(selectedCategory)) {
+                    categoryToShow = selectedCategory;
+                } else {
+                    categoryToShow = categories.get(0);
+                    selectedCategory = categoryToShow;
+                }
 
                 // 카테고리 어댑터 세팅
                 if (categoryAdapter == null) {
                     categoryAdapter = new CategoryAdapter(categories, category -> {
+                        selectedCategory = category; // ✅ 선택 저장
+
                         if (menuAdapter != null) {
                             menuAdapter.setItems(filterMenuByCategory(category));
                         }
@@ -226,19 +247,20 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     categoryAdapter.setItems(categories);
                 }
-                categoryAdapter.setSelectedCategory(defaultCategory);
 
+                // 선택 표시도 현재 선택으로 맞춤
+                categoryAdapter.setSelectedCategory(categoryToShow);
 
+                // 메뉴 어댑터 세팅 (현재 선택 카테고리 기준으로 갱신)
                 if (menuAdapter == null) {
                     menuAdapter = new MenuAdapter(
-                            filterMenuByCategory(defaultCategory),
+                            filterMenuByCategory(categoryToShow),
                             allOptions,
                             MainActivity.this::onMenuClicked
                     );
-
                     rvMenu.setAdapter(menuAdapter);
                 } else {
-                    menuAdapter.setItems(filterMenuByCategory(defaultCategory));
+                    menuAdapter.setItems(filterMenuByCategory(categoryToShow));
                 }
             }
 
@@ -248,6 +270,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
 
     // 카테고리별 메뉴 필터
     private List<MenuItem> filterMenuByCategory(String category) {
@@ -474,6 +497,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d("SMKIOSK", json);   // 실제 전송되는 JSON 확인
 
         apiService.sendOrder(req).enqueue(new Callback<>() {
+            @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
             @Override
             public void onResponse(Call<OrderSaveResponse> call,
                                    Response<OrderSaveResponse> response) {
@@ -482,7 +506,8 @@ public class MainActivity extends AppCompatActivity {
                     String receipt = buildReceiptString(res, printTarget);
                     Log.d("SMKIOSK", receipt);
 
-                    printReceipt(receipt, response.body().getOrderNo()); //처리 안해도 문제는 없음
+                    //TODO : 실제 배포시에는 써야함
+                    //printReceipt(receipt, response.body().getOrderNo()); 
 
                     cart.clear();
                     cartAdapter.notifyDataSetChanged();
@@ -782,6 +807,4 @@ public class MainActivity extends AppCompatActivity {
                 .setNegativeButton("취소", null)
                 .show();
     }
-
-
 }
