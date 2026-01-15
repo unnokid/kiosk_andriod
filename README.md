@@ -2,6 +2,10 @@
 
 <img src="img.png" width="120" height="120" />
 
+## 🎬 Demo Video
+[![Demo Video](https://img.youtube.com/vi/N7YfoIP7nHU/maxresdefault.jpg)](https://www.youtube.com/watch?v=N7YfoIP7nHU)
+
+
 키오스크 주문을 위한 **Android 앱(사용자 주문 화면)** 입니다.  
 카테고리/메뉴 조회 후 주문을 생성하며, 백엔드 API 서버와 연동됩니다.
 
